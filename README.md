@@ -11,13 +11,13 @@ Original codebase by *Daniel Demmler, Thomas Schneider and Michael Zohner* ([ENC
 - [ABY ](#aby-)
     - [ABY Framework with Improvements for Malicious Attackers](#aby-framework-with-improvements-for-malicious-attackers)
     - [Table of Contents](#table-of-contents)
+    - [Changes to ABY Framework - TinyOT](#changes-to-aby-framework---tinyot)
     - [Requirements](#requirements)
     - [ABY Source Code](#aby-source-code)
       - [Repository Structure (With Improvements)](#repository-structure-with-improvements)
       - [Building the ABY Framework and Testing Code Improvements](#building-the-aby-framework-and-testing-code-improvements)
         - [Short Version](#short-version)
-    - [Changes to ABY Framework - TinyOT](#changes-to-aby-framework---tinyot)
-      - [Rundown of Millionaire's Problem Flags and Uses](#rundown-of-millionaires-problem-flags-and-uses)
+        - [Rundown of Millionaire's Problem Flags and Uses](#rundown-of-millionaires-problem-flags-and-uses)
         - [Detailed Guide](#detailed-guide)
           - [External Dependencies](#external-dependencies)
           - [Test Executables and Example Applications](#test-executables-and-example-applications)
@@ -31,6 +31,26 @@ Original codebase by *Daniel Demmler, Thomas Schneider and Michael Zohner* ([ENC
       - [Creating and Building your own ABY Application](#creating-and-building-your-own-aby-application)
 
 [The original README can be found here.](https://github.com/encryptogroup/ABY)
+
+### Changes to ABY Framework - TinyOT
+
+As mentioned in the paper, the framework itself is made and focused on security in the semi-honest model, where servers are not malicious, but may be curious and attempt to get more information than is given to them.
+
+For this assignment, I have extended the framework to also include the malicious model of security as well using a loose implementation of TinyOT. In this approach we are attempting to block interactions with servers that are compromised, and possibly not respecting communication over the accepted methods for a particular computation.
+
+This additional security comes in the form of arithmetic Message Authentication Codes (MAC) with the idea that a non-malicious (compromised) server will have access to the correct key and recieve the correct message. The following steps are taken:
+
+1. Pre-computation, the servers are initialized with a key that is shared with them only for the duration of this computation.
+2. The servers take their key and a message that has been given to both of them and perform an encryption using a SHA-based MAC technique. Note that having an incorrect message or key will cause a failure.
+3. The encrypted output is then put into a shared boolean channel where each server can only see its own encrypted key.
+4. The keys are compared and both servers are notified if computation can continue.
+5. Computation is finished, and the keys are discarded.
+
+It's worth noting that for this assignment there are still means of improving the MAC codes to further improve security. For instance, a trusted key generating server could be put in place that provides new keys to servers attempting a new computation. By making the server only accessible on a closed network, the system gains additional security against unwanted attackers.
+
+Additionally, for this assignment I've only updated the `examples/millionaire_prob` implementation with this approach, but it could be used for any one of the examples. It is possible that the implementation could be extracted further into a utility function, and given more time this would be an interesting avenue to explore.
+
+For an additional verification, I've included a flag (`-m 1`) that will mark a server as a compromised malicious attacker. Running the command under `./build/bin/millionaire_prob_test` with the `-m 1` will cause a failure due to security compromise.
 
 ### Requirements
 ---
@@ -98,37 +118,14 @@ Original codebase by *Daniel Demmler, Thomas Schneider and Michael Zohner* ([ENC
 
 7. A moment or two later you should see output mentioning that the parties are trusted and the execution of the Millionaire's problem should complete successfully.
 
-### Changes to ABY Framework - TinyOT
 
-As mentioned in the paper, the framework itself is made and focused on security in the semi-honest model, where servers are not malicious, but may be curious and attempt to get more information than is given to them.
-
-For this assignment, I have extended the framework to also include the malicious model of security as well using a loose implementation of TinyOT. In this approach we are attempting to block interactions with servers that are compromised, and possibly not respecting communication over the accepted methods for a particular computation.
-
-This additional security comes in the form of arithmetic Message Authentication Codes (MAC) with the idea that a non-malicious (compromised) server will have access to the correct key and recieve the correct message. The following steps are taken:
-
-1. Pre-computation, the servers are initialized with a key that is shared with them only for the duration of this computation.
-2. The servers take their key and a message that has been given to both of them and perform an encryption using a SHA-based MAC technique. Note that having an incorrect message or key will cause a failure.
-3. The encrypted output is then put into a shared boolean channel where each server can only see its own encrypted key.
-4. The keys are compared and both servers are notified if computation can continue.
-5. Computation is finished, and the keys are discarded.
-
-It's worth noting that for this assignment there are still means of improving the MAC codes to further improve security. For instance, a trusted key generating server could be put in place that provides new keys to servers attempting a new computation. By making the server only accessible on a closed network, the system gains additional security against unwanted attackers.
-
-Additionally, for this assignment I've only updated the `examples/millionaire_prob` implementation with this approach, but it could be used for any one of the examples. It is possible that the implementation could be extracted further into a utility function, and given more time this would be an interesting avenue to explore.
-
-For an additional verification, I've included a flag (`-m 1`) that will mark a server as a compromised malicious attacker. Running the following commands (again in two terminals) will show the computation detect the attacker and gracefully exit:
+##### Rundown of Millionaire's Problem Flags and Uses
 
 ```
-./bin/millionaire_prob_test -r 0 -m 1
+./build/bin/millionaire_prob_test -r <0,1> [FLAGS]
 ```
 
-```
-./bin/millionaire_prob_test -r 1
-```
-
-#### Rundown of Millionaire's Problem Flags and Uses
-
-- `-r`: Role (0-1) represents the SERVER (0) or CLIENT (1) for a given computation.
+- `-r`: Role (0-1) represents the SERVER (0) or CLIENT (1) for a given computation. Required.
 - `-b`: Bit Length, defaults to 32.
 - `-s`: Security Param, determines the security level, defaults to 128.
 - `-a`: Host Address, defaults to `'127.0.0.1'`.
