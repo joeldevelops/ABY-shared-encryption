@@ -16,7 +16,7 @@
  \brief		Implementation of the millionaire problem using ABY Framework.
  */
 
-#include <vector>
+#include <string>
 #include <ENCRYPTO_utils/crypto/crypto.h>
 
 #include "millionaire_prob.h"
@@ -53,7 +53,7 @@ int32_t test_millionaire_prob_circuit(e_role role, const std::string& address, u
 	 * Step 4: Sign a random message using the Arithmetic MAC
 	*/
 	// specify if we are using a trusted third party or a malicious party
-	std::string key = malicious ? "attacker" : mac_key;
+	std::string key = malicious ? "attacker-" + std::to_string(role) : mac_key;
 	ArithmeticMAC* verifier = new ArithmeticMAC(key);
 	std::string message = "This is a random message";
 	uint64_t mac_str = verifier->ComputeMAC(message);

@@ -1,39 +1,36 @@
 # [ABY](http://encrypto.de/papers/DSZ15.pdf) [![Build Status](https://travis-ci.org/encryptogroup/ABY.svg?branch=public)](https://travis-ci.org/encryptogroup/ABY)
 
 
-### A Framework for Efficient Mixed-Protocol Secure Two-Party Computation
+### ABY Framework with Improvements for Malicious Attackers
 
-By *Daniel Demmler, Thomas Schneider and Michael Zohner* ([ENCRYPTO](http://www.encrypto.de), TU Darmstadt)<br>in [Network and Distributed System Security Symposium (NDSS'15)](http://www.internetsociety.org/events/ndss-symposium-2015). [Paper available here.](http://thomaschneider.de/papers/DSZ15.pdf)
+Original codebase by *Daniel Demmler, Thomas Schneider and Michael Zohner* ([ENCRYPTO](http://www.encrypto.de), TU Darmstadt)<br>in [Network and Distributed System Security Symposium (NDSS'15)](http://www.internetsociety.org/events/ndss-symposium-2015). [Paper available here.](http://thomaschneider.de/papers/DSZ15.pdf)
 
 
 ### Table of Contents
 
-- [Features](#features)
-- [Requirements](#requirements)
-- [ABY Source Code](#aby-source-code)
-    - [Repository Structure](#repository-structure)
-    - [Building the ABY Framework](#building-the-aby-framework)
+- [ABY ](#aby-)
+    - [ABY Framework with Improvements for Malicious Attackers](#aby-framework-with-improvements-for-malicious-attackers)
+    - [Table of Contents](#table-of-contents)
+    - [Requirements](#requirements)
+    - [ABY Source Code](#aby-source-code)
+      - [Repository Structure (With Improvements)](#repository-structure-with-improvements)
+      - [Building the ABY Framework and Testing Code Improvements](#building-the-aby-framework-and-testing-code-improvements)
         - [Short Version](#short-version)
+    - [Changes to ABY Framework - TinyOT](#changes-to-aby-framework---tinyot)
+      - [Rundown of Millionaire's Problem Flags and Uses](#rundown-of-millionaires-problem-flags-and-uses)
         - [Detailed Guide](#detailed-guide)
-            - [External Dependencies](#external-dependencies)
-            - [Test Executables and Example Applications](#test-executables-and-example-applications)
-            - [Build Options](#build-options)
-            - [Cleaning the Build Directory](#cleaning-the-build-directory)
-            - [Installation](#installation)
-    - [Developer Guide and Documentation](#developer-guide-and-documentation)
-- [ABY Applications](#aby-applications)
-    - [Included Example Applications](#included-example-applications)
-    - [Running Applications](#running-applications)
-    - [Creating and Building your own ABY Application](#creating-and-building-your-own-aby-application)
+          - [External Dependencies](#external-dependencies)
+          - [Test Executables and Example Applications](#test-executables-and-example-applications)
+          - [Build Options](#build-options)
+          - [Cleaning the Build Directory](#cleaning-the-build-directory)
+          - [Installation](#installation)
+      - [Developer Guide and Documentation](#developer-guide-and-documentation)
+    - [ABY Applications](#aby-applications)
+      - [Included Example Applications](#included-example-applications)
+      - [Running Applications](#running-applications)
+      - [Creating and Building your own ABY Application](#creating-and-building-your-own-aby-application)
 
-
-### Features
----
-ABY efficiently combines secure computation schemes based on **Arithmetic sharing**, **Boolean sharing**, and **Yao’s garbled circuits** and makes available best-practice solutions in secure two-party computation.
-It allows to pre-compute almost all cryptographic operations and provides novel, highly efficient conversions between secure computation schemes based on pre-computed *oblivious transfer extensions* using our [**OT extension library**](https://github.com/encryptogroup/OTExtension) available on GitHub.
-ABY supports several standard operations and provides example applications.
-
-This code is provided as a experimental implementation for testing purposes and should not be used in a productive environment. We cannot guarantee security and correctness.
+[The original README can be found here.](https://github.com/encryptogroup/ABY)
 
 ### Requirements
 ---
@@ -55,40 +52,89 @@ This code is provided as a experimental implementation for testing purposes and 
 ### ABY Source Code
 ---
 
-#### Repository Structure
+#### Repository Structure (With Improvements)
 
 * `bin/circ/`    - Circuits in the ABY format.
 * `cmake/`    - CMake helper files.
 * `extern/`    - External dependencies as Git submodules.
 * `src/`    - Source code.
  * `src/abycore/` - Source of the internal ABY functions.
+   * `src/abycore/MAC_verify` - Implementation of arithmetic Message Authentication Codes (MAC) for verification of the servers interacting on the computation.
  * `src/examples/` - Example applications. Each application has a `/common` directory that holds the functionality (circuit). The idea is to re-use this circuit even outside of the application. The application's root directory contains a `.cpp` file with a main method that runs the circuit and is used to verify correctness.
  * `src/test/` - Currently one application to test internal ABY functions as well as example applications and print debug information.
 
-#### Building the ABY Framework
+#### Building the ABY Framework and Testing Code Improvements
 
 ##### Short Version
 
 1. Clone the ABY git repository by running:
     ```
-    git clone https://github.com/encryptogroup/ABY.git
+    git clone https://github.com/joeldevelops/ABY-shared-encryption.git
     ```
 
-2. Enter the Framework directory: `cd ABY/`
+2. Enter the Framework directory: `cd ABY-shared-encryption/`
 
 3. Create and enter the build directory: `mkdir build && cd build`
 
 4. Use CMake configure the build:
     ```
-    cmake ..
+    cmake .. -DABY_BUILD_EXE=On
     ```
     This also initializes and updates the Git submodules of the dependencies
     located in `extern/`.  If you plan to work without a network connection,
     you should to a `--recursive` clone in Step 1.
 
 5. Call `make` in the build directory.
-   You can find the build executables and libraries in the directories `bin/`
-   and `lib/`, respectively.
+   You can find the build executables and libraries in the directories `build/bin/`
+   and `build/lib/`, respectively.
+
+6. To run the test of the changes to this codebase and verify the added security, open a second terminal and run the two below commands, one in each terminal:
+    ```
+    ./bin/millionaire_prob_test -r 0
+    ```
+    ```
+    ./bin/millionaire_prob_test -r 1
+    ```
+
+7. A moment or two later you should see output mentioning that the parties are trusted and the execution of the Millionaire's problem should complete successfully.
+
+### Changes to ABY Framework - TinyOT
+
+As mentioned in the paper, the framework itself is made and focused on security in the semi-honest model, where servers are not malicious, but may be curious and attempt to get more information than is given to them.
+
+For this assignment, I have extended the framework to also include the malicious model of security as well using a loose implementation of TinyOT. In this approach we are attempting to block interactions with servers that are compromised, and possibly not respecting communication over the accepted methods for a particular computation.
+
+This additional security comes in the form of arithmetic Message Authentication Codes (MAC) with the idea that a non-malicious (compromised) server will have access to the correct key and recieve the correct message. The following steps are taken:
+
+1. Pre-computation, the servers are initialized with a key that is shared with them only for the duration of this computation.
+2. The servers take their key and a message that has been given to both of them and perform an encryption using a SHA-based MAC technique. Note that having an incorrect message or key will cause a failure.
+3. The encrypted output is then put into a shared boolean channel where each server can only see its own encrypted key.
+4. The keys are compared and both servers are notified if computation can continue.
+5. Computation is finished, and the keys are discarded.
+
+It's worth noting that for this assignment there are still means of improving the MAC codes to further improve security. For instance, a trusted key generating server could be put in place that provides new keys to servers attempting a new computation. By making the server only accessible on a closed network, the system gains additional security against unwanted attackers.
+
+Additionally, for this assignment I've only updated the `examples/millionaire_prob` implementation with this approach, but it could be used for any one of the examples. It is possible that the implementation could be extracted further into a utility function, and given more time this would be an interesting avenue to explore.
+
+For an additional verification, I've included a flag (`-m 1`) that will mark a server as a compromised malicious attacker. Running the following commands (again in two terminals) will show the computation detect the attacker and gracefully exit:
+
+```
+./bin/millionaire_prob_test -r 0 -m 1
+```
+
+```
+./bin/millionaire_prob_test -r 1
+```
+
+#### Rundown of Millionaire's Problem Flags and Uses
+
+- `-r`: Role (0-1) represents the SERVER (0) or CLIENT (1) for a given computation.
+- `-b`: Bit Length, defaults to 32.
+- `-s`: Security Param, determines the security level, defaults to 128.
+- `-a`: Host Address, defaults to `'127.0.0.1'`.
+- `-p`: Port, defaults to `'7766'`, if you update this flag, it should be the same for both server and client.
+- `-k`: MAC Key, use this to specify a new encryption key, defaults to `mac_key`.
+- `-m`: Malicious (0-1), changes the client or server to an attacker, defaults to 0.
 
 ##### Detailed Guide
 
@@ -195,13 +241,6 @@ Also, see the [online doxygen documentation of ABY](http://encryptogroup.github.
 #### Included Example Applications
 
   * The [**Millionaire's Problem**](http://en.wikipedia.org/wiki/Yao%27s_Millionaires%27_Problem) was proposed by Yao in 1982. Two parties want to find out who is richer, without revealing their actual wealth. This simple example can be used as starting point for your own ABY application.
-  * Secure computation [**AES**](https://en.wikipedia.org/wiki/Advanced_Encryption_Standard), where one party inputs the key and the other party inputs a message to collaboratively encrypt.
-  * The [**Euclidean Distance**](https://en.wikipedia.org/wiki/Euclidean_distance) for two 2-dimensional coordinates.
-  * The **Minimum Euclidean Distance** for finding the closest match between one d-dimensional element and a database of n d-dimensional elements.
-  * The [**Arithmetic Inner Product**](https://en.wikipedia.org/wiki/Dot_product#Algebraic_definition) that multiplies N values component-wise and then adds all multiplication results (modulo 16 Bit in this case).
-  * Secure Hash Function Evaluation [**SHA1**](https://en.wikipedia.org/wiki/SHA1), where both parties concatenate their 256-bit inputs to a 512-bit message which is collaboratively hashed using SHA1.
-  * The LowMC block cipher family [**LowMC**](http://eprint.iacr.org/2016/687), which is a block cipher family with a low number of AND gates and a low AND depth. In the example, one party inputs the key and the other party inputs a message to collaboratively encrypt.
-  * Further example applications will be added soon.
 
 #### Running Applications
   * Make sure you have build ABY as described above and set the
