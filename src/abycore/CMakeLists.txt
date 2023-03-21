@@ -15,6 +15,7 @@ add_library(aby
     sharing/yaoclientsharing.cpp
     sharing/yaoserversharing.cpp
     sharing/yaosharing.cpp
+    MAC_verify/macverify.cpp
 )
 add_library(ABY::aby ALIAS aby)
 

@@ -16,74 +16,64 @@
  \brief		Millionaire problem Test class implementation.
  */
 
+#include <getopt.h>
 //Utility libs
 #include <ENCRYPTO_utils/crypto/crypto.h>
-#include <ENCRYPTO_utils/parse_options.h>
 //ABY Party class
 #include "../../abycore/aby/abyparty.h"
+#include "../../abycore/MAC_verify/macverify.h"
 
 #include "common/millionaire_prob.h"
 
-int32_t read_test_options(int32_t* argcp, char*** argvp, e_role* role,
-		uint32_t* bitlen, uint32_t* nvals, uint32_t* secparam, std::string* address,
-		uint16_t* port, int32_t* test_op) {
-
-	uint32_t int_role = 0, int_port = 0;
-
-	parsing_ctx options[] =
-			{ { (void*) &int_role, T_NUM, "r", "Role: 0/1", true, false }, {
-					(void*) nvals, T_NUM, "n",
-					"Number of parallel operation elements", false, false }, {
-					(void*) bitlen, T_NUM, "b", "Bit-length, default 32", false,
-					false }, { (void*) secparam, T_NUM, "s",
-					"Symmetric Security Bits, default: 128", false, false }, {
-					(void*) address, T_STR, "a",
-					"IP-address, default: localhost", false, false }, {
-					(void*) &int_port, T_NUM, "p", "Port, default: 7766", false,
-					false }, { (void*) test_op, T_NUM, "t",
-					"Single test (leave out for all operations), default: off",
-					false, false } };
-
-	if (!parse_options(argcp, argvp, options,
-			sizeof(options) / sizeof(parsing_ctx))) {
-		print_usage(*argvp[0], options, sizeof(options) / sizeof(parsing_ctx));
-		std::cout << "Exiting" << std::endl;
-		exit(0);
-	}
-
-	assert(int_role < 2);
-	*role = (e_role) int_role;
-
-	if (int_port != 0) {
-		assert(int_port < 1 << (sizeof(uint16_t) * 8));
-		*port = (uint16_t) int_port;
-	}
-
-	//delete options;
-
-	return 1;
-}
-
 int main(int argc, char** argv) {
-
+	int c;
 	e_role role;
 	uint32_t bitlen = 32, nvals = 31, secparam = 128, nthreads = 1;
 	uint16_t port = 7766;
 	std::string address = "127.0.0.1";
 	int32_t test_op = -1;
 	e_mt_gen_alg mt_alg = MT_OT;
+	std::string mac_key = "mac_key";
+	bool malicious = false;
 
-	read_test_options(&argc, &argv, &role, &bitlen, &nvals, &secparam, &address,
-			&port, &test_op);
+  // Read command-line options
+  while((c = getopt(argc, argv, "r:b:s:a:p:m:k")) != -1) {
+    switch(c) {
+      case 'r':
+        role = (e_role) atoi(optarg);
+        break;
+      case 'b':
+        bitlen = atoi(optarg);
+        break;
+      case 's':
+        secparam = atoi(optarg);
+        break;
+      case 'a':
+        address = optarg;
+        break;
+      case 'p':
+        port = atoi(optarg);
+        break;
+      case 'm':
+        malicious = atoi(optarg) == 1 ? true : false;
+        break;
+      case 'k':
+        mac_key = optarg;
+        break;
+      default:
+        std::cout << "Invalid option" << std::endl;
+        exit(0);
+    }
+  }
 
 	seclvl seclvl = get_sec_lvl(secparam);
 
 	//evaluate the millionaires circuit using Yao
 	test_millionaire_prob_circuit(role, address, port, seclvl, 32,
-			nthreads, mt_alg, S_YAO);
+			nthreads, mt_alg, S_YAO, mac_key, malicious);
 	//evaluate the millionaires circuit using GMW
 	//test_millionaire_prob_circuit(role, address, port, seclvl, 32,
-	//		nthreads, mt_alg, S_BOOL);
+	//		nthreads, mt_alg, S_BOOL, mac_key, malicious);
 
 	return 0;
 }

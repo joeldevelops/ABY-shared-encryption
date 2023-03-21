@@ -4,22 +4,17 @@
 
 #include <iostream>
 #include <cstring>
-#include <openssl/hmac.h>
 #include <openssl/sha.h>
 
 using namespace std;
 
 class ArithmeticMAC {
-public:
-  ArithmeticMAC(const string& key);
-  ~ArithmeticMAC();
-
-  string ComputeMAC(const string& message);
-
-  bool VerifyMAC(const string& message, const string& mac_str);
-
 private:
-  string key_;
+  SHA256_CTX sha256_;
+
+public:
+  ArithmeticMAC(const string key);
+  uint64_t ComputeMAC(string message);
 };
 
 #endif //__MACVERIFY_H__

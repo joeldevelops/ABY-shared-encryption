@@ -19,6 +19,7 @@
 #ifndef __MILLIONAIREPROB_H_
 #define __MILLIONAIREPROB_H_
 
+#include "../../../abycore/MAC_verify/macverify.h"
 #include "../../../abycore/circuit/booleancircuits.h"
 #include "../../../abycore/circuit/arithmeticcircuits.h"
 #include "../../../abycore/circuit/circuit.h"
@@ -41,7 +42,7 @@
  millionaire's problem
  */
 int32_t test_millionaire_prob_circuit(e_role role, const std::string& address, uint16_t port, seclvl seclvl,
-		uint32_t bitlen, uint32_t nthreads, e_mt_gen_alg mt_alg, e_sharing sharing);
+		uint32_t bitlen, uint32_t nthreads, e_mt_gen_alg mt_alg, e_sharing sharing, std::string mac_key, bool malicious);
 
 /**
  \param		s_alice		shared object of alice.

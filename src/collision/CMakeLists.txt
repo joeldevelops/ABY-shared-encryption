@@ -1,3 +1,0 @@
-
-add_executable(satellite_collision_test satellite_collision_test.cpp common/collision.cpp)
-target_link_libraries(satellite_collision_test ABY::aby ENCRYPTO_utils::encrypto_utils)
